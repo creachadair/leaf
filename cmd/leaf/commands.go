@@ -42,16 +42,25 @@ func runGet(env *command.Env, table, key string) error {
 	return nil
 }
 
-func runSet(env *command.Env, table, key, value string) error {
-	f := env.Config.(*leaf.File)
-	var enc any
-	if json.Valid([]byte(value)) {
-		enc = json.RawMessage(value)
-	} else {
-		enc = value // just the string
+func runSet(env *command.Env, table, key, value string, rest ...string) error {
+	if len(rest)%2 != 0 {
+		return env.Usagef("odd-length key-value list: %q", rest)
 	}
+	f := env.Config.(*leaf.File)
+	tab := f.Database().Table(table)
+	all := append([]string{key, value}, rest...)
 
-	f.Database().Table(table).Set(key, enc)
+	for i := 0; i+1 < len(all); i += 2 {
+		k, v := all[i], all[i+1]
+
+		var enc any
+		if json.Valid([]byte(v)) {
+			enc = json.RawMessage(v)
+		} else {
+			enc = v // just the string
+		}
+		tab.Set(k, enc)
+	}
 	if f.IsModified() {
 		return saveFile(f)
 	}

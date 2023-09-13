@@ -59,10 +59,10 @@ Otherwise the user is prompted for a passphrase.`,
 			},
 			{
 				Name:  "set",
-				Usage: "<table-name> <key> <value>",
-				Help: `Set the value of a key.
+				Usage: "<table-name> <key> <value> [<key> <value> ...]",
+				Help: `Set the values of one or more keys.
 
-If the value is a valid JSON text, it is taken verbatim; otherwise the
+If a value is a valid JSON text, it is taken verbatim; otherwise the
 value is converted to a JSON string value.`,
 
 				Init: requireFile,
