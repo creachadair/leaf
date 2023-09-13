@@ -33,8 +33,13 @@ func main() {
 		Commands: []*command.C{
 			{
 				Name: "create",
-				Help: "Create an empty LEAF file.",
-				Run:  command.Adapt(runCreate),
+				Help: `Create an empty LEAF file.
+
+The specified file path must not exist; move or rename if necessary.
+If an --access-key file is specified, it is used to initialize the file.
+Otherwise the user is prompted for a passphrase.`,
+
+				Run: command.Adapt(runCreate),
 			},
 			{
 				Name:  "get",
@@ -46,9 +51,13 @@ func main() {
 			{
 				Name:  "set",
 				Usage: "<table-name> <key> <value>",
-				Help:  "Set the value of a key.",
-				Init:  requireFile,
-				Run:   command.Adapt(runSet),
+				Help: `Set the value of a key.
+
+If the value is a valid JSON text, it is taken verbatim; otherwise the
+value is converted to a JSON string value.`,
+
+				Init: requireFile,
+				Run:  command.Adapt(runSet),
 			},
 			{
 				Name:  "delete",
