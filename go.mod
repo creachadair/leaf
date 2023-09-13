@@ -9,6 +9,7 @@ require (
 	github.com/creachadair/getpass v0.2.1
 	github.com/creachadair/mds v0.2.3
 	github.com/google/go-cmp v0.5.9
+	github.com/klauspost/compress v1.16.7
 	golang.org/x/crypto v0.13.0
 )
 

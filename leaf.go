@@ -16,8 +16,10 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"sync"
 	"time"
 
+	"github.com/klauspost/compress/zstd"
 	"golang.org/x/crypto/chacha20poly1305"
 )
 
@@ -45,7 +47,7 @@ func (f *File) WriteTo(w io.Writer) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("encode data: %w", err)
 	}
-	dataEncrypted, err := encryptWithKey(f.dataKeyPlain, data)
+	dataEncrypted, err := encryptWithKey(f.dataKeyPlain, compress(data))
 	if err != nil {
 		return 0, fmt.Errorf("encrypt data: %w", err)
 	}
@@ -117,7 +119,7 @@ func Open(accessKey []byte, r io.Reader) (*File, error) {
 
 	// Phase 4: Decode the data log.
 	var db Database
-	if err := json.Unmarshal(payload, &db); err != nil {
+	if err := json.Unmarshal(decompress(payload), &db); err != nil {
 		clear(dataKey)
 		return nil, fmt.Errorf("decode data: %w", err)
 	}
@@ -435,4 +437,40 @@ func unmarshalOrPanic(data []byte, v any) {
 	if err := json.Unmarshal(data, v); err != nil {
 		panic(err)
 	}
+}
+
+var encs = &sync.Pool{
+	New: func() any {
+		enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedFastest))
+		if err != nil {
+			panic(fmt.Sprintf("zstd.NewWriter: %v", err))
+		}
+		return enc
+	},
+}
+
+func compress(data []byte) []byte {
+	enc := encs.Get().(*zstd.Encoder)
+	defer encs.Put(enc)
+	return enc.EncodeAll(data, nil)
+}
+
+var decs = &sync.Pool{
+	New: func() any {
+		dec, err := zstd.NewReader(nil)
+		if err != nil {
+			panic(fmt.Sprintf("zstd.NewReader: %v", err))
+		}
+		return dec
+	},
+}
+
+func decompress(data []byte) []byte {
+	dec := decs.Get().(*zstd.Decoder)
+	defer decs.Put(dec)
+	out, err := dec.DecodeAll(data, nil)
+	if err != nil {
+		panic(err)
+	}
+	return out
 }
