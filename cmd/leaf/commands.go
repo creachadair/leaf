@@ -1,6 +1,7 @@
 package main
 
 import (
+	cryptorand "crypto/rand"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/creachadair/atomicfile"
 	"github.com/creachadair/command"
+	"github.com/creachadair/leaf"
 )
 
 func runCreate(env *command.Env) error {
@@ -168,10 +170,22 @@ func runDebugRewind(env *command.Env, when string) error {
 	return writePrettyJSON(f.Database().Snapshot())
 }
 
+var keyFileFlags struct {
+	Random bool `flag:"random,Generate a random key"`
+}
+
 func runDebugKeyFile(env *command.Env, keyFile string) error {
-	accessKey, err := promptAccessKey("", true)
-	if err != nil {
+	var accessKey []byte
+	if keyFileFlags.Random {
+		accessKey = make([]byte, leaf.AccessKeyLen)
+		if _, err := cryptorand.Read(accessKey); err != nil {
+			return err
+		}
+		fmt.Fprintf(env, "Generated a random %d-byte key\n", len(accessKey))
+	} else if ak, err := promptAccessKey("", true); err != nil {
 		return err
+	} else {
+		accessKey = ak
 	}
 	return atomicfile.WriteData(keyFile, accessKey, 0600)
 }
