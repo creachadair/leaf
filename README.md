@@ -2,7 +2,7 @@
 
 [![GoDoc](https://img.shields.io/static/v1?label=godoc&message=reference&color=white)](https://pkg.go.dev/github.com/creachadair/leaf)
 
-Lightweight Encrypted Archive Format (LEAF) is a lightweight encrypted storage representation for small databases of important data like passwords and private notes. The store is log-structured, and preserves the complete history of changes so that it can be rewound to any previous state.
+Lightweight Encrypted Archive Format (LEAF) is an encrypted storage representation for small databases of important data like passwords and private notes. The store is log-structured, preserving the complete history of changes so that it can be rewound to any previous state.
 
 ## Usage Summary
 
@@ -47,9 +47,9 @@ A LEAF file is a JSON object with the following format:
 }
 ```
 
-All encryption is performed using the AEAD construction with the ChaCha20-Poly1305 algorithm with a 256-bit key and a 24-bit nonce.
+All encryption is performed using the AEAD construction with the ChaCha20-Poly1305 algorithm with a 256-bit key and a 24-byte nonce.
 
-The user must provide a 256-bit _access key_ to create or open a file. Typically this may be generated randomly and stored in a secure location, or generated from a passphrase via a KDF like [scrypt](https://en.wikipedia.org/wiki/Scrypt) or [hkdf](https://en.wikipedia.org/wiki/HKDF).
+The user must provide a 256-bit (32 byte) _access key_ to create or open a file. Typically this may be generated randomly and stored in a secure location, or generated from a passphrase via a KDF like [scrypt](https://en.wikipedia.org/wiki/Scrypt) or [hkdf](https://en.wikipedia.org/wiki/HKDF).
 
 The _data key_ (`"key"`) is encrypted with the access key.
 
