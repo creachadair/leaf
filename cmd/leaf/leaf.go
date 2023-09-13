@@ -40,24 +40,28 @@ func main() {
 				Name:  "get",
 				Usage: "<table-name> <key>",
 				Help:  "Get the value of a key.",
+				Init:  requireFile,
 				Run:   command.Adapt(runGet),
 			},
 			{
 				Name:  "set",
 				Usage: "<table-name> <key> <value>",
 				Help:  "Set the value of a key.",
+				Init:  requireFile,
 				Run:   command.Adapt(runSet),
 			},
 			{
 				Name:  "delete",
 				Usage: "<table-name> <key>",
 				Help:  "Delete a key from a table.",
+				Init:  requireFile,
 				Run:   command.Adapt(runDelete),
 			},
 			{
 				Name:  "list",
 				Usage: "<table-name>",
 				Help:  "List the keys in a table.",
+				Init:  requireFile,
 				Run:   command.Adapt(runList),
 			},
 			{
@@ -68,18 +72,21 @@ func main() {
 					{
 						Name: "list",
 						Help: "List the known tables.",
+						Init: requireFile,
 						Run:  command.Adapt(runTableList),
 					},
 					{
 						Name:  "create",
 						Usage: "<table-name>",
 						Help:  "Create a table.",
+						Init:  requireFile,
 						Run:   command.Adapt(runTableCreate),
 					},
 					{
 						Name:  "delete",
 						Usage: "<table-name>",
 						Help:  "Delete a table.",
+						Init:  requireFile,
 						Run:   command.Adapt(runTableDelete),
 					},
 				},
@@ -92,11 +99,13 @@ func main() {
 					{
 						Name: "log",
 						Help: "Write the database log in plaintext.",
+						Init: requireFile,
 						Run:  command.Adapt(runDebugLog),
 					},
 					{
 						Name: "snapshot",
 						Help: "Print a database snapshot.",
+						Init: requireFile,
 						Run:  command.Adapt(runDebugSnapshot),
 					},
 					{
@@ -110,6 +119,7 @@ WARNING: With --replace, the rewound database is written back to the file (destr
          Make a copy first if you want to keep the original.`,
 
 						SetFlags: command.Flags(flax.MustBind, &rewindFlags),
+						Init:     requireFile,
 						Run:      command.Adapt(runDebugRewind),
 					},
 					{
@@ -208,4 +218,13 @@ func writePrettyJSON(v any) error {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
+}
+
+func requireFile(env *command.Env) error {
+	f, err := openFile(false)
+	if err != nil {
+		return err
+	}
+	env.Config = f
+	return nil
 }

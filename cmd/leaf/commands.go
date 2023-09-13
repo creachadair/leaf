@@ -27,10 +27,7 @@ func runCreate(env *command.Env) error {
 }
 
 func runGet(env *command.Env, table, key string) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	tab, ok := f.Database().GetTable(table)
 	if !ok {
 		fmt.Fprintf(env, "table not found: %q\n", table)
@@ -46,10 +43,7 @@ func runGet(env *command.Env, table, key string) error {
 }
 
 func runSet(env *command.Env, table, key, value string) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	var enc any
 	if json.Valid([]byte(value)) {
 		enc = json.RawMessage(value)
@@ -65,10 +59,7 @@ func runSet(env *command.Env, table, key, value string) error {
 }
 
 func runList(env *command.Env, table string) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	for _, key := range f.Database().Table(table).Keys() {
 		fmt.Println(key)
 	}
@@ -76,10 +67,7 @@ func runList(env *command.Env, table string) error {
 }
 
 func runDelete(env *command.Env, table, key string) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	tab, ok := f.Database().GetTable(table)
 	if !ok {
 		fmt.Fprintf(env, "table not found: %q\n", table)
@@ -91,10 +79,7 @@ func runDelete(env *command.Env, table, key string) error {
 }
 
 func runTableList(env *command.Env) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	for _, tab := range f.Database().TableNames() {
 		fmt.Println(tab)
 	}
@@ -102,10 +87,7 @@ func runTableList(env *command.Env) error {
 }
 
 func runTableCreate(env *command.Env, name string) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	f.Database().Table(name)
 	if f.IsModified() {
 		fmt.Fprintf(env, "created %q\n", name)
@@ -115,10 +97,7 @@ func runTableCreate(env *command.Env, name string) error {
 }
 
 func runTableDelete(env *command.Env, name string) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	if f.Database().DeleteTable(name) {
 		fmt.Fprintf(env, "deleted %q\n", name)
 		return saveFile(f)
@@ -127,18 +106,12 @@ func runTableDelete(env *command.Env, name string) error {
 }
 
 func runDebugLog(env *command.Env) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	return writePrettyJSON(f.Database())
 }
 
 func runDebugSnapshot(env *command.Env) error {
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+	f := env.Config.(*leaf.File)
 	return writePrettyJSON(f.Database().Snapshot())
 }
 
@@ -155,10 +128,8 @@ func runDebugRewind(env *command.Env, when string) error {
 		}
 		ts = time.UnixMicro(v)
 	}
-	f, err := openFile(false)
-	if err != nil {
-		return err
-	}
+
+	f := env.Config.(*leaf.File)
 	f.Database().Rewind(ts)
 	fmt.Fprintf(env, "Rewound database to %s (%d)\n", ts.Format(time.RFC3339), ts.UnixMicro())
 	if rewindFlags.Replace {
