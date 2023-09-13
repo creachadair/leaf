@@ -141,6 +141,7 @@ WARNING: With --replace, the rewound database is written back to the file (destr
 				},
 			},
 			command.HelpCommand(nil),
+			command.VersionCommand(),
 		},
 	}
 	command.RunOrFail(root.NewEnv(nil).MergeFlags(true), os.Args[1:])
