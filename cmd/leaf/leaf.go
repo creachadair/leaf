@@ -20,14 +20,23 @@ import (
 
 var settings struct {
 	FilePath      string `flag:"f,default=$LEAF_FILE,LEAF file path (required)"`
-	AccessKeyFile string `flag:"access-key,Access key file path"`
+	AccessKeyFile string `flag:"access-key,default=$LEAF_ACCESS_KEY,Access key file path"`
 }
 
 func main() {
 	root := &command.C{
-		Name:     filepath.Base(os.Args[0]),
-		Usage:    "command [args]\nhelp [command]",
-		Help:     `Read and write LEAF files.`,
+		Name:  filepath.Base(os.Args[0]),
+		Usage: "command [args]\nhelp [command]",
+		Help: `Read and write LEAF files.
+
+Commands that operate on a file require a file path.
+If the -f flag is set, it is used as the path.
+Otherwise, the LEAF_FILE environment variable is used if set.
+
+If --access-key is set, it is used as the access key file.
+Otherwise, if LEAF_ACCESS_KEY is set it is used.
+Otherwise the user is prompted at the terminal.`,
+
 		SetFlags: command.Flags(flax.MustBind, &settings),
 
 		Commands: []*command.C{
