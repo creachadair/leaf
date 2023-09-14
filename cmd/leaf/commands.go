@@ -75,13 +75,21 @@ func runList(env *command.Env, table string) error {
 	return nil
 }
 
-func runDelete(env *command.Env, table, key string) error {
+func runDelete(env *command.Env, table string, keys ...string) error {
+	if len(keys) == 0 {
+		return env.Usagef("missing required key")
+	}
 	f := env.Config.(*leaf.File)
 	tab, ok := f.Database().GetTable(table)
 	if !ok {
 		fmt.Fprintf(env, "table not found: %q\n", table)
-	} else if tab.Delete(key) {
-		fmt.Fprintf(env, "deleted: %q\n", key)
+	}
+	for _, key := range keys {
+		if tab.Delete(key) {
+			fmt.Fprintf(env, "deleted: %q\n", key)
+		}
+	}
+	if f.IsModified() {
 		return saveFile(f)
 	}
 	return nil
