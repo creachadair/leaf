@@ -55,7 +55,7 @@ The _data key_ (`"key"`) is encrypted with the access key.
 
 The _data record_ is encrypted with the data key.
 
-The plaintext data record is a JSON object with the following structure:
+The plaintext data record is a [snappy](https://godoc.org/github.com/golang/snappy) compressed JSON object with the following structure:
 
 ```json
 {
@@ -66,15 +66,17 @@ The plaintext data record is a JSON object with the following structure:
 }
 ```
 
+The data record is compressed as a single complete record in block mode.
+
 The database is a sequence of log entries recording the complete history of state changes. A _log entry_ is a JSON object with this format:
 
 ```json
 {
   "op": "<opcode>",
-  "table": "<table-name>",
+  "tab": "<table-name>",
   "key": "<key-name>",
-  "value": <value>,
-  "time": "<timestamp>"
+  "val": <value>,
+  "clk": "<timestamp>"
 }
 ```
 

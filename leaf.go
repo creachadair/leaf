@@ -16,10 +16,9 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"sync"
 	"time"
 
-	"github.com/klauspost/compress/zstd"
+	"github.com/golang/snappy"
 	"golang.org/x/crypto/chacha20poly1305"
 )
 
@@ -28,6 +27,15 @@ const AccessKeyLen = chacha20poly1305.KeySize // 32 bytes
 
 // formatVersion is the file format version understood by this package.
 const formatVersion = 1
+
+// Constants for operations.
+const (
+	opCreateTable = "create-table"
+	opDeleteTable = "delete-table"
+	opClearTable  = "clear-table"
+	opUpdateKey   = "update"
+	opDeleteKey   = "delete"
+)
 
 // A File is a LEAF archive file.
 type File struct {
@@ -175,7 +183,7 @@ func (d *Database) GetTable(name string) (Table, bool) {
 func (d *Database) Table(name string) Table {
 	if _, ok := d.tabs[name]; !ok {
 		d.tabs[name] = make(map[string]*logEntry)
-		d.addLog(&logEntry{Op: "create-table", A: name, TS: timeNow()})
+		d.addLog(&logEntry{Op: opCreateTable, A: name, TS: timeNow()})
 	}
 	return Table{name: name, db: d}
 }
@@ -184,7 +192,7 @@ func (d *Database) Table(name string) Table {
 func (d *Database) DeleteTable(name string) bool {
 	if _, ok := d.tabs[name]; ok {
 		delete(d.tabs, name)
-		d.addLog(&logEntry{Op: "delete-table", A: name, TS: timeNow()})
+		d.addLog(&logEntry{Op: opDeleteTable, A: name, TS: timeNow()})
 		return true
 	}
 	return false
@@ -276,28 +284,18 @@ func tablesFromLog(log []*logEntry) map[string]map[string]*logEntry {
 	m := make(map[string]map[string]*logEntry)
 	for _, e := range log {
 		switch e.Op {
-		case "create-table":
+		case opCreateTable:
 			if m[e.A] == nil {
 				m[e.A] = make(map[string]*logEntry)
 			}
-		case "delete-table":
+		case opDeleteTable:
 			delete(m, e.A)
-		case "rename-table":
-			old := m[e.A]
-			delete(m, e.A)
-			m[e.B] = old
-		case "clear-table":
+		case opClearTable:
 			clear(m[e.A])
-		case "update":
+		case opUpdateKey:
 			m[e.A][e.B] = e
-		case "delete":
+		case opDeleteKey:
 			delete(m[e.A], e.B)
-		case "rename":
-			old := m[e.A][e.B]
-			var newName string
-			unmarshalOrPanic(e.C, &newName)
-			delete(m[e.A], e.B)
-			m[e.A][newName] = old
 		}
 	}
 	return m
@@ -307,10 +305,10 @@ func (d *Database) addLog(e *logEntry) { d.log = append(d.log, e); d.dirty = tru
 
 type logEntry struct {
 	Op string          `json:"op"`
-	A  string          `json:"table,omitempty"`
+	A  string          `json:"tab,omitempty"`
 	B  string          `json:"key,omitempty"`
-	C  json.RawMessage `json:"value,omitempty"`
-	TS int64           `json:"time,string"`
+	C  json.RawMessage `json:"val,omitempty"`
+	TS int64           `json:"clk,omitempty"`
 }
 
 // A Table is a mapping of string keys to JSON-marshalable values.
@@ -372,7 +370,7 @@ func (t Table) Set(key string, val any) bool {
 	}
 	tab := t.db.tabs[t.name]
 	_, isOld := tab[key]
-	tab[key] = &logEntry{Op: "update", A: t.name, B: key, C: bits, TS: timeNow()}
+	tab[key] = &logEntry{Op: opUpdateKey, A: t.name, B: key, C: bits, TS: timeNow()}
 	t.db.addLog(tab[key])
 	return !isOld
 }
@@ -389,7 +387,7 @@ func (t Table) Delete(key string) bool {
 	tab := t.db.tabs[t.name]
 	if _, ok := tab[key]; ok {
 		delete(tab, key)
-		t.db.addLog(&logEntry{Op: "delete", A: t.name, B: key, TS: timeNow()})
+		t.db.addLog(&logEntry{Op: opDeleteKey, A: t.name, B: key, TS: timeNow()})
 		return true
 	}
 	return false
@@ -400,7 +398,7 @@ func (t Table) Clear() {
 	tab := t.db.tabs[t.name]
 	if len(tab) != 0 {
 		clear(tab)
-		t.db.addLog(&logEntry{Op: "clear-table", A: t.name, TS: timeNow()})
+		t.db.addLog(&logEntry{Op: opClearTable, A: t.name, TS: timeNow()})
 	}
 }
 
@@ -439,38 +437,12 @@ func unmarshalOrPanic(data []byte, v any) {
 	}
 }
 
-var encs = &sync.Pool{
-	New: func() any {
-		enc, err := zstd.NewWriter(nil, zstd.WithEncoderLevel(zstd.SpeedFastest))
-		if err != nil {
-			panic(fmt.Sprintf("zstd.NewWriter: %v", err))
-		}
-		return enc
-	},
-}
-
-func compress(data []byte) []byte {
-	enc := encs.Get().(*zstd.Encoder)
-	defer encs.Put(enc)
-	return enc.EncodeAll(data, nil)
-}
-
-var decs = &sync.Pool{
-	New: func() any {
-		dec, err := zstd.NewReader(nil)
-		if err != nil {
-			panic(fmt.Sprintf("zstd.NewReader: %v", err))
-		}
-		return dec
-	},
-}
+func compress(data []byte) []byte { return snappy.Encode(nil, data) }
 
 func decompress(data []byte) []byte {
-	dec := decs.Get().(*zstd.Decoder)
-	defer decs.Put(dec)
-	out, err := dec.DecodeAll(data, nil)
+	dec, err := snappy.Decode(nil, data)
 	if err != nil {
 		panic(err)
 	}
-	return out
+	return dec
 }
