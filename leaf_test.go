@@ -110,10 +110,23 @@ func TestSemantics(t *testing.T) {
 	}
 
 	// After creating a table, it should exist.
-	db.Table("test")
+	nt := db.Table("test")
 	if _, ok := db.GetTable("test"); !ok {
 		t.Error("Table test: should exist but does not")
 	}
+
+	// After renaming a table, the old name should not exist and the new one
+	// should.
+	nt.Rename("other")
+	if got, ok := db.GetTable("test"); ok {
+		t.Errorf("Table test: got %v, want none", got)
+	}
+	if _, ok := db.GetTable("other"); !ok {
+		t.Error("Table other: should exist but does not")
+	}
+
+	// But renaming back should restore the status quo.
+	nt.Rename("test")
 
 	// If we delete a table, it should not exist anymore.
 	if !db.DeleteTable("test") {

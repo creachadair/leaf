@@ -90,6 +90,7 @@ The following operations are understood by the log:
 |--------------|-------|-----|-------|----------------------------------------------|
 | create-table | name  | -   | -     | create a (new) table with the given name     |
 | delete-table | name  | -   | -     | delete an existing table with the given name |
+| rename-table | old   | new | -     | rename an existing table from old to new     |
 | clear-table  | name  | -   | -     | remove all entries from the given table      |
 | update       | table | key | value | insert or replace key with value in table    |
 | delete       | table | key | -     | delete key from table                        |

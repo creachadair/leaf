@@ -32,6 +32,7 @@ const formatVersion = 1
 const (
 	opCreateTable = "create-table"
 	opDeleteTable = "delete-table"
+	opRenameTable = "rename-table"
 	opClearTable  = "clear-table"
 	opUpdateKey   = "update"
 	opDeleteKey   = "delete"
@@ -290,6 +291,10 @@ func tablesFromLog(log []*logEntry) map[string]map[string]*logEntry {
 			}
 		case opDeleteTable:
 			delete(m, e.A)
+		case opRenameTable:
+			old := m[e.A]
+			delete(m, e.A)
+			m[e.B] = old
 		case opClearTable:
 			clear(m[e.A])
 		case opUpdateKey:
@@ -362,7 +367,7 @@ func AsMap[T any](t Table) map[string]T {
 	return m
 }
 
-// Set adds or updates the value of key in t and repots whether the key was new.
+// Set adds or updates the value of key in t and reports whether it was new.
 func (t Table) Set(key string, val any) bool {
 	bits, err := json.Marshal(val)
 	if err != nil {
@@ -391,6 +396,17 @@ func (t Table) Delete(key string) bool {
 		return true
 	}
 	return false
+}
+
+// Rename renames t to the specified name.
+func (t *Table) Rename(newName string) {
+	if t.name == newName {
+		return
+	}
+	t.db.tabs[newName] = t.db.tabs[t.name]
+	delete(t.db.tabs, t.name)
+	t.db.addLog(&logEntry{Op: opRenameTable, A: t.name, B: newName, TS: timeNow()})
+	t.name = newName
 }
 
 // Clear removes all the keys from t.
