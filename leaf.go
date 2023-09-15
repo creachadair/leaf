@@ -313,7 +313,7 @@ type logEntry struct {
 	A  string          `json:"tab,omitempty"`
 	B  string          `json:"key,omitempty"`
 	C  json.RawMessage `json:"val,omitempty"`
-	TS int64           `json:"clk,omitempty"`
+	TS int64           `json:"clk,string"`
 }
 
 // A Table is a mapping of string keys to JSON-marshalable values.
