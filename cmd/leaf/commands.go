@@ -30,13 +30,11 @@ func runGet(env *command.Env, table, key string) error {
 	f := env.Config.(*leaf.File)
 	tab, ok := f.Database().GetTable(table)
 	if !ok {
-		fmt.Fprintf(env, "table not found: %q\n", table)
-		return nil
+		return fmt.Errorf("table %q not found", table)
 	}
 	var val json.RawMessage
 	if !tab.Get(key, &val) {
-		fmt.Fprintf(env, "key not found: %q\n", key)
-		return nil
+		return fmt.Errorf("key %q not found", key)
 	}
 	fmt.Println(string(val))
 	return nil
@@ -82,7 +80,7 @@ func runDelete(env *command.Env, table string, keys ...string) error {
 	f := env.Config.(*leaf.File)
 	tab, ok := f.Database().GetTable(table)
 	if !ok {
-		fmt.Fprintf(env, "table not found: %q\n", table)
+		return fmt.Errorf("table %q not found", table)
 	}
 	for _, key := range keys {
 		if tab.Delete(key) {
@@ -115,8 +113,21 @@ func runTableCreate(env *command.Env, name string) error {
 
 func runTableDelete(env *command.Env, name string) error {
 	f := env.Config.(*leaf.File)
-	if f.Database().DeleteTable(name) {
-		fmt.Fprintf(env, "deleted %q\n", name)
+	if !f.Database().DeleteTable(name) {
+		return fmt.Errorf("table %q not found", name)
+	}
+	fmt.Fprintf(env, "deleted %q\n", name)
+	return saveFile(f)
+}
+
+func runTableRename(env *command.Env, oldName, newName string) error {
+	f := env.Config.(*leaf.File)
+	tab, ok := f.Database().GetTable(oldName)
+	if !ok {
+		return fmt.Errorf("table %q not found", oldName)
+	}
+	tab.Rename(newName)
+	if f.IsModified() {
 		return saveFile(f)
 	}
 	return nil

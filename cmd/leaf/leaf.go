@@ -107,6 +107,13 @@ value is converted to a JSON string value.`,
 						Init:  requireFile,
 						Run:   command.Adapt(runTableDelete),
 					},
+					{
+						Name:  "rename",
+						Usage: "<table-name> <new-name>",
+						Help:  "Rename a table.",
+						Init:  requireFile,
+						Run:   command.Adapt(runTableRename),
+					},
 				},
 			},
 			{
