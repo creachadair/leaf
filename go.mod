@@ -4,8 +4,8 @@ go 1.21.1
 
 require (
 	github.com/creachadair/atomicfile v0.3.2
-	github.com/creachadair/command v0.1.1
-	github.com/creachadair/flax v0.0.0-20230904162121-7852fa2389bd
+	github.com/creachadair/command v0.1.2
+	github.com/creachadair/flax v0.0.0-20230915004402-7ab95fecb9ff
 	github.com/creachadair/getpass v0.2.1
 	github.com/creachadair/mds v0.2.3
 	github.com/golang/snappy v0.0.4
