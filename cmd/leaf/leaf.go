@@ -134,6 +134,13 @@ value is converted to a JSON string value.`,
 						Run:  command.Adapt(runDebugSnapshot),
 					},
 					{
+						Name:  "import",
+						Usage: "[<input-file>]",
+						Help:  "Import a database snapshot.",
+						Init:  requireFile,
+						Run:   runDebugImport,
+					},
+					{
 						Name:  "rewind",
 						Usage: "<timestamp>|<rfc3339>",
 						Help: `Rewind the database to this timestamp.

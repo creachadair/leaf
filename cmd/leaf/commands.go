@@ -4,6 +4,7 @@ import (
 	cryptorand "crypto/rand"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"time"
@@ -141,6 +142,36 @@ func runDebugLog(env *command.Env) error {
 func runDebugSnapshot(env *command.Env) error {
 	f := env.Config.(*leaf.File)
 	return writePrettyJSON(f.Database().Snapshot())
+}
+
+func runDebugImport(env *command.Env) error {
+	var data []byte
+	var err error
+	if len(env.Args) == 0 {
+		data, err = io.ReadAll(os.Stdin)
+	} else if len(env.Args) > 1 {
+		return env.Usagef("extra arguments: %q", env.Args[1:])
+	} else {
+		data, err = os.ReadFile(env.Args[0])
+	}
+	if err != nil {
+		return err
+	}
+	var db map[string]map[string]any
+	if err := json.Unmarshal(data, &db); err != nil {
+		return fmt.Errorf("decoding input: %w", err)
+	}
+	f := env.Config.(*leaf.File)
+	for tname, tab := range db {
+		dbTab := f.Database().Table(tname)
+		for key, val := range tab {
+			dbTab.Set(key, val)
+		}
+	}
+	if f.IsModified() {
+		return saveFile(f)
+	}
+	return nil
 }
 
 var rewindFlags struct {
