@@ -144,6 +144,15 @@ func runDebugSnapshot(env *command.Env) error {
 	return writePrettyJSON(f.Database().Snapshot())
 }
 
+func runDebugCompact(env *command.Env) error {
+	f := env.Config.(*leaf.File)
+	f.Database().Compact()
+	if f.IsModified() {
+		return saveFile(f)
+	}
+	return nil
+}
+
 func runDebugImport(env *command.Env) error {
 	var data []byte
 	var err error

@@ -134,6 +134,12 @@ value is converted to a JSON string value.`,
 						Run:  command.Adapt(runDebugSnapshot),
 					},
 					{
+						Name: "compact",
+						Help: "Compact the log to the current state.",
+						Init: requireFile,
+						Run:  command.Adapt(runDebugCompact),
+					},
+					{
 						Name:  "import",
 						Usage: "[<input-file>]",
 						Help:  "Import a database snapshot.",

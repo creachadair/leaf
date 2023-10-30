@@ -10,6 +10,7 @@
 package leaf
 
 import (
+	"bytes"
 	cryptorand "crypto/rand"
 	"encoding/json"
 	"errors"
@@ -36,6 +37,7 @@ const (
 	opClearTable  = "clear-table"
 	opUpdateKey   = "update"
 	opDeleteKey   = "delete"
+	opSnapshot    = "snapshot"
 )
 
 // A File is a LEAF archive file.
@@ -261,6 +263,22 @@ func (d *Database) Snapshot() map[string]map[string]json.RawMessage {
 	return snap
 }
 
+// Compact compacts the log of d to the current state of the database.
+func (d *Database) Compact() {
+	if len(d.log) == 0 {
+		return
+	}
+	cur, err := json.Marshal(d.tabs)
+	if err != nil {
+		panic(err)
+	}
+	if len(d.log) == 1 && d.log[0].Op == opSnapshot && bytes.Equal(cur, d.log[0].C) {
+		return // nothing to do
+	}
+	d.log = []*logEntry{{Op: opSnapshot, C: cur, TS: timeNow()}}
+	d.dirty = true
+}
+
 type wireDB struct {
 	Log []*logEntry `json:"log"`
 }
@@ -301,6 +319,9 @@ func tablesFromLog(log []*logEntry) map[string]map[string]*logEntry {
 			m[e.A][e.B] = e
 		case opDeleteKey:
 			delete(m[e.A], e.B)
+		case opSnapshot:
+			clear(m)
+			unmarshalOrPanic(e.C, &m)
 		}
 	}
 	return m
