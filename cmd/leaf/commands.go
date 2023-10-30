@@ -147,10 +147,13 @@ func runDebugSnapshot(env *command.Env) error {
 func runDebugCompact(env *command.Env) error {
 	f := env.Config.(*leaf.File)
 	f.Database().Compact()
-	if f.IsModified() {
-		return saveFile(f)
+	if rewindFlags.Replace {
+		if f.IsModified() {
+			return saveFile(f)
+		}
+		return nil
 	}
-	return nil
+	return writePrettyJSON(f.Database())
 }
 
 func runDebugImport(env *command.Env) error {

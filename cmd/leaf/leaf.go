@@ -135,9 +135,15 @@ value is converted to a JSON string value.`,
 					},
 					{
 						Name: "compact",
-						Help: "Compact the log to the current state.",
-						Init: requireFile,
-						Run:  command.Adapt(runDebugCompact),
+						Help: `Compact the log to the current state.
+
+By default, the compacted log is printed.
+
+WARNING: With --replace, the compacted database is written back to the file (destructive).
+         Make a copy first if you want to keep the original.`,
+						Init:     requireFile,
+						SetFlags: command.Flags(flax.MustBind, &rewindFlags),
+						Run:      command.Adapt(runDebugCompact),
 					},
 					{
 						Name:  "import",
