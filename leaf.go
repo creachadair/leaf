@@ -268,7 +268,7 @@ func (d *Database) Compact() {
 	if len(d.log) == 0 {
 		return
 	}
-	cur, err := json.Marshal(d.tabs)
+	cur, err := json.Marshal(d.Snapshot())
 	if err != nil {
 		panic(err)
 	}
