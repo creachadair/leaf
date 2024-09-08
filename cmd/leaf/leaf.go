@@ -179,7 +179,7 @@ WARNING: With --replace, the rewound database is written back to the file (destr
 			command.VersionCommand(),
 		},
 	}
-	command.RunOrFail(root.NewEnv(nil).MergeFlags(true), os.Args[1:])
+	command.RunOrFail(root.NewEnv(nil), os.Args[1:])
 }
 
 func getAccessKey(path string, confirm bool) ([]byte, error) {
