@@ -1,6 +1,6 @@
 module github.com/creachadair/leaf
 
-go 1.21.1
+go 1.21
 
 require (
 	github.com/creachadair/atomicfile v0.3.3
